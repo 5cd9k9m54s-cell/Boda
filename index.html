@@ -146,6 +146,19 @@ textarea{min-height:64px;resize:vertical}
 .detalles{display:flex;flex-direction:column;gap:14px;width:100%;animation:sube .5s both}
 input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
 .gracias{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:18px 0;animation:sube .6s both}
+.portada .page{padding:30px 26px 22px 32px;gap:10px}
+.portada .arco{width:auto;height:calc(min(80dvh,720px)*.44);aspect-ratio:3/4;flex:none;max-width:100%}
+.arco img{object-position:50% 28%}
+.nombres{display:flex;align-items:center;justify-content:center;gap:6px}
+.portada .nombres .rings{width:66px;height:44px}
+.leaf[aria-label="Programa"] .page{padding:26px 26px 20px 32px;gap:8px}
+.dia{margin-top:2px}
+.dia .hito{margin-top:-24px}
+.dia .hito:first-child{margin-top:0}
+.dia .hito .txt{gap:2px;padding:2px 0}
+.dia .ico{width:36px;height:36px}
+.dia .hito b{font-size:11.5px}
+.dia .hito i{font-size:21px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -181,14 +194,14 @@ input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
 
  <section class="leaf portada" aria-label="Portada"><div class="page">
   <div class="save" style="font-family:'Italianno',cursive;font-size:34px;color:#6d2f40;line-height:1;margin-top:4px">Save the date</div>
-  <div class="nombre">Raúl</div><svg class="rings"><use href="#alianzas"/></svg><div class="nombre">Elena</div>
+  <div class="nombres"><div class="nombre">Raúl</div><svg class="rings"><use href="#alianzas"/></svg><div class="nombre">Elena</div></div>
   <figure class="arco"><div><img src="fotos/foto1.jpg.jpg" alt="Raúl y Elena" onerror="this.parentNode.classList.add('vacio')"></div></figure>
   <p class="fecha">04 · septiembre · 2027</p>
   <button class="btn oro" id="abrir">Pasar página</button>
  </div></section>
 
  <section class="leaf" aria-label="Bienvenida"><div class="page">
-  <h2>Queremos que estés</h2>
+  <h2>Tu presencia es importante para nosotros</h2>
   <div class="par">
    <figure class="pola" style="margin:0"><div><img src="fotos/foto2.jpg.PNG" alt="" onerror="this.parentNode.classList.add('vacio')"></div></figure>
    <figure class="pola" style="margin:0"><div><img src="fotos/foto3.jpg.jpeg" alt="" onerror="this.parentNode.classList.add('vacio')"></div></figure>
@@ -233,7 +246,8 @@ input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
   <form id="rsvp" novalidate>
    <div class="eleccion"><button type="button" class="op" data-v="si">Sí, allí estaré</button><button type="button" class="op" data-v="no">No podré ir</button></div>
    <div class="detalles" id="detalles" hidden>
-    <label>Tu nombre (y el de tus acompañantes)<input id="nombre" autocomplete="name"></label>
+    <label>Nombre y apellidos<input id="nombre" autocomplete="name"><small id="errNombre" hidden style="color:#c0392b">Escribe tu nombre y apellidos</small></label>
+    <label id="lblAcomp">Acompañantes (nombre y apellidos de cada uno)<textarea id="acomp" placeholder="Si vienes solo, déjalo en blanco"></textarea></label>
     <label id="lblObs">Alergias u observaciones<textarea id="obs" placeholder="Si no hay ninguna, déjalo en blanco"></textarea></label>
     <button class="btn oro" type="submit" style="align-self:center;min-width:55%">Enviar</button>
    </div>
@@ -251,8 +265,7 @@ input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
  <section class="leaf portada" aria-label="Contraportada"><div class="page">
   <div style="font-family:'Italianno',cursive;font-size:46px;color:#6d2f40;line-height:1;margin-top:6px">Os esperamos</div>
   <figure class="arco"><div><img src="fotos/foto5jpg.jpeg" alt="Raúl y Elena" onerror="this.parentNode.classList.add('vacio')"></div></figure>
-  <svg class="rings"><use href="#alianzas"/></svg>
-  <div class="nombre">Raúl &amp; Elena</div>
+  <div class="nombres"><div class="nombre">Raúl</div><svg class="rings"><use href="#alianzas"/></svg><div class="nombre">Elena</div></div>
   <p class="fecha">04 · septiembre · 2027</p>
  </div></section>
 </main>
@@ -376,30 +389,32 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.hidden=true});
 
 // confirmación
 let asiste=null;
-const nombre=document.getElementById('nombre'), obs=document.getElementById('obs');
+const nombre=document.getElementById('nombre'), obs=document.getElementById('obs'), acomp=document.getElementById('acomp'), errN=document.getElementById('errNombre');
 document.querySelector('.eleccion').addEventListener('click',e=>{
   const b=e.target.closest('.op'); if(!b)return;
   asiste=b.dataset.v==='si';
   document.querySelectorAll('.op').forEach(o=>o.classList.toggle('on',o===b));
   document.getElementById('detalles').hidden=false;
   document.getElementById('lblObs').hidden=!asiste;
+  document.getElementById('lblAcomp').hidden=!asiste;
 });
-nombre.addEventListener('input',()=>nombre.classList.remove('err'));
+nombre.addEventListener('input',()=>{nombre.classList.remove('err');errN.hidden=true});
 document.getElementById('rsvp').addEventListener('submit',e=>{
   e.preventDefault();
   if(asiste===null)return;
   const nom=nombre.value.trim();
-  if(!nom){nombre.classList.add('err');nombre.focus();return}
+  if(nom.split(/\s+/).filter(Boolean).length<2){nombre.classList.add('err');errN.hidden=false;nombre.focus();return}
+  const ac=acomp.value.trim();
   const o=obs.value.trim();
   let t=`Hola, soy ${nom}. `;
-  t+=asiste?`Confirmo mi asistencia a la boda de Raúl y Elena (4/9/2027).\nAlergias u observaciones: ${o||'ninguna'}`
+  t+=asiste?`Confirmo mi asistencia a la boda de Raúl y Elena (4/9/2027).\nAcompañantes: ${ac||'ninguno'}\nAlergias u observaciones: ${o||'ninguna'}`
            :'Lamentablemente no podré ir a la boda de Raúl y Elena (4/9/2027).';
   const asunto='Boda Raúl y Elena · '+(asiste?'Confirmación':'No puedo asistir')+' · '+nom;
   const btn=e.submitter||document.querySelector('#detalles .btn');
   btn.disabled=true; btn.textContent='Enviando…';
   const porCorreo=()=>{location.href=`mailto:${CORREO}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(t)}`;btn.disabled=false;btn.textContent='Enviar'};
   fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
-    body:JSON.stringify({access_key:CLAVE,subject:asunto,from_name:'Invitación de boda',name:nom,asistencia:asiste?'Sí':'No',observaciones:o||'ninguna',message:t})})
+    body:JSON.stringify({access_key:CLAVE,subject:asunto,from_name:'Invitación de boda',name:nom,asistencia:asiste?'Sí':'No',acompanantes:ac||'ninguno',observaciones:o||'ninguna',message:t})})
    .then(r=>r.json())
    .then(d=>{
      if(!d.success)throw new Error('fallo');
