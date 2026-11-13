@@ -168,6 +168,11 @@ input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
 .cal .hoy svg{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;fill:var(--rose);filter:drop-shadow(0 1px 2px rgba(156,66,86,.45));animation:latido 2.4s ease-in-out infinite}
 .cal .hoy b{position:relative;color:#fff;font-weight:600;font-size:13px}
 @keyframes latido{50%{transform:scale(1.12)}}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--sage);background:none;color:#4d6150;font:400 14px Jost,sans-serif;cursor:pointer;transition:.3s}
+.seg button.on{background:var(--sage);color:#fff}
+.hotel{font-size:12.5px;line-height:1.4;color:#6b5d60}
+.hotel a{color:var(--rose);text-decoration:underline}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -258,6 +263,10 @@ input.err{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.2)}
    <div class="detalles" id="detalles" hidden>
     <label>Nombre y apellidos<input id="nombre" autocomplete="name"><small id="errNombre" hidden style="color:#c0392b">Escribe tu nombre y apellidos</small></label>
     <label id="lblAcomp">Acompañantes (nombre y apellidos de cada uno)<textarea id="acomp" placeholder="Si vienes solo, déjalo en blanco"></textarea></label>
+    <div id="logistica" hidden>
+     <div class="lab">¿Necesitarás hotel?<small class="hotel">HA Parla · Av. del Leguario, 2, Parla · <a href="https://hahoteles.es/ha-hoteles-parla/" target="_blank" rel="noopener">Ver hotel</a></small><div class="seg" data-k="hotel"><button type="button" data-v="Sí">Sí</button><button type="button" data-v="No">No</button></div></div>
+     <div class="lab" id="lblTrans" hidden style="margin-top:12px">¿Quieres transporte del hotel a la finca y vuelta al hotel al acabar la fiesta?<div class="seg" data-k="transporte"><button type="button" data-v="Sí">Sí</button><button type="button" data-v="No">No</button></div></div>
+    </div>
     <label id="lblObs">Alergias u observaciones<textarea id="obs" placeholder="Si no hay ninguna, déjalo en blanco"></textarea></label>
     <button class="btn oro" type="submit" style="align-self:center;min-width:55%">Enviar</button>
    </div>
@@ -407,8 +416,19 @@ document.querySelector('.eleccion').addEventListener('click',e=>{
   document.getElementById('detalles').hidden=false;
   document.getElementById('lblObs').hidden=!asiste;
   document.getElementById('lblAcomp').hidden=!asiste;
+  document.getElementById('logistica').hidden=!asiste;
 });
 nombre.addEventListener('input',()=>{nombre.classList.remove('err');errN.hidden=true});
+let hotel=null,transp=null;
+document.getElementById('logistica').addEventListener('click',e=>{
+  const b=e.target.closest('.seg button'); if(!b)return;
+  const k=b.parentNode.dataset.k, v=b.dataset.v;
+  b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  if(k==='hotel'){
+    hotel=v; document.getElementById('lblTrans').hidden=v!=='Sí';
+    if(v!=='Sí'){transp=null;document.querySelectorAll('#lblTrans .seg button').forEach(x=>x.classList.remove('on'))}
+  } else transp=v;
+});
 document.getElementById('rsvp').addEventListener('submit',e=>{
   e.preventDefault();
   if(asiste===null)return;
@@ -417,14 +437,14 @@ document.getElementById('rsvp').addEventListener('submit',e=>{
   const ac=acomp.value.trim();
   const o=obs.value.trim();
   let t=`Hola, soy ${nom}. `;
-  t+=asiste?`Confirmo mi asistencia a la boda de Elena y Raúl (4/9/2027).\nAcompañantes: ${ac||'ninguno'}\nAlergias u observaciones: ${o||'ninguna'}`
+  t+=asiste?`Confirmo mi asistencia a la boda de Elena y Raúl (4/9/2027).\nAcompañantes: ${ac||'ninguno'}\nHotel: ${hotel||'no indicado'}\nTransporte hotel-finca-hotel: ${hotel==='Sí'?(transp||'no indicado'):'no aplica'}\nAlergias u observaciones: ${o||'ninguna'}`
            :'Lamentablemente no podré ir a la boda de Elena y Raúl (4/9/2027).';
   const asunto='Boda Elena y Raúl · '+(asiste?'Confirmación':'No puedo asistir')+' · '+nom;
   const btn=e.submitter||document.querySelector('#detalles .btn');
   btn.disabled=true; btn.textContent='Enviando…';
   const porCorreo=()=>{location.href=`mailto:${CORREO}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(t)}`;btn.disabled=false;btn.textContent='Enviar'};
   fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
-    body:JSON.stringify({access_key:CLAVE,subject:asunto,from_name:'Invitación de boda',name:nom,asistencia:asiste?'Sí':'No',acompanantes:ac||'ninguno',observaciones:o||'ninguna',message:t})})
+    body:JSON.stringify({access_key:CLAVE,subject:asunto,from_name:'Invitación de boda',name:nom,asistencia:asiste?'Sí':'No',acompanantes:ac||'ninguno',hotel:hotel||'no indicado',transporte:hotel==='Sí'?(transp||'no indicado'):'no aplica',observaciones:o||'ninguna',message:t})})
    .then(r=>r.json())
    .then(d=>{
      if(!d.success)throw new Error('fallo');
